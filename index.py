@@ -1,6 +1,6 @@
 from flask import Flask
-app = Flask(__name__)
+from config.db import initialize_db
+from config.app import app
+import controllers.project
 
-@app.route('/')
-def hello_world():
-    return "<h1>Hi there !! Welcome to our first app using Python and Flask by Mika</h1>"
+initialize_db(app)
