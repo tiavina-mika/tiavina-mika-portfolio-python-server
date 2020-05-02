@@ -26,24 +26,6 @@ def get_projects():
     except Exception as e:
         print(e)
 
-# @app.route('/projects')
-# def get_projects():
-#     try:
-#         body = request.get_json()
-#         projects = Project.objects.order_by('-createdAt')
-#         page = body.get('current_page') or 1
-#         per_page = body.get('per_page') or 2
-#         paginated_projects = projects.paginate(page=int(page), per_page=int(per_page))
-
-#         return jsonify({
-#                 "items": paginated_projects.items, 
-#                 "current_page": paginated_projects.page, 
-#                 "per_page": paginated_projects.per_page, 
-#                 "total": paginated_projects.total, 
-#             }), 200
-#     except Exception as e:
-#         print(e)
-
 @app.route('/projects', methods=['POST'])
 def add_project():
     try:
