@@ -9,13 +9,23 @@ def get_projects():
     try:
         args = request.args
         if "page" in args:
-            page = args["page"]
+            page = int(args["page"])
+        else:
+            page = 1
 
         if "per_page" in args:
-            per_page = args.get("per_page")
+            per_page = int(args.get("per_page"))
+        else:
+            per_page = 15
+            
+        if "order_by" in args:
+            order_by = args.get("order_by")
+        else:
+            order_by = "createdAt"
+            
         
-        projects = Project.objects.order_by('-createdAt')
-        paginated_projects = projects.paginate(page=int(page) or 1, per_page=int(per_page) or 2)
+        projects = Project.objects.order_by(f"{order_by}")
+        paginated_projects = projects.paginate(page=page, per_page=per_page)
 
         return jsonify({
                 "items": paginated_projects.items, 
@@ -48,8 +58,9 @@ def update_project(id):
 @app.route('/projects/<id>', methods=['DELETE'])
 def delete_project(id):
     try:
-        project = Project.objects.get(id=id).delete()
-        return '', 200
+        project = Project.objects.get_or_404(id=id).delete()
+
+        return { "id": id }, 200
     except Exception as e:
             print(e)
 
