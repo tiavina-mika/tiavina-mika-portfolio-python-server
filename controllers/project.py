@@ -50,8 +50,10 @@ def add_project():
 def update_project(id):
     try:
         body = request.get_json()
-        Project.objects.get(id=id).update(**body, updatedAt = datetime.now())
-        return Project.objects().to_json(), 200
+        project = Project.objects.get(id=id)
+        project.update(**body, updatedAt = datetime.now())
+        project.reload()
+        return jsonify(project), 200
     except Exception as e:
         print(e)
 
