@@ -54,7 +54,7 @@ def update_project(id):
     try:
         body = request.get_json()
         project = Project.objects.get(id=id)
-        project.update(**body, updatedAt = datetime.now())
+        project.update(**body, updatedAt = datetime.now(), slug = slugify(body['name']))
         project.reload()
         return jsonify(project), 200
     except Exception as e:

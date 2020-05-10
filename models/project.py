@@ -4,6 +4,7 @@ from datetime import datetime
 class Project(db.Document):
     name = db.StringField(required=True)
     slug = db.StringField(required=True, unique=True)
+    tags = db.ListField(db.StringField())
     createdAt = db.DateTimeField(default=datetime.now())
     updatedAt = db.DateTimeField()
 
