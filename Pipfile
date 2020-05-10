@@ -13,6 +13,7 @@ flask-mongoengine = "*"
 pymongo = {extras = ["srv", "tls"],version = "*"}
 dnspython = "*"
 flask-cors = "*"
+python-slugify = "*"
 
 [requires]
 python_version = "3.7"

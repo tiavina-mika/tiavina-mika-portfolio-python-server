@@ -3,6 +3,7 @@ from models.project import Project
 from config.app import app
 from datetime import datetime
 import json
+from slugify import slugify
 
 @app.route('/projects')
 def get_projects():
@@ -40,7 +41,9 @@ def get_projects():
 def add_project():
     try:
         body = request.get_json()
-        project =  Project(**body).save()
+        project =  Project(**body)
+        project.slug = slugify(project.name)
+        project.save()
 
         return jsonify(project), 200
     except Exception as e:
@@ -70,6 +73,15 @@ def delete_project(id):
 def get_project(id):
     try:
         project = Project.objects.get_or_404(id=id).to_json()
+
+        return Response(project, mimetype="application/json", status=200)
+    except Exception as e:
+        print(e)
+
+@app.route('/projects/slug/<slug>')
+def get_project_by_slug(slug):
+    try:
+        project = Project.objects.get_or_404(slug=slug).to_json()
 
         return Response(project, mimetype="application/json", status=200)
     except Exception as e:
