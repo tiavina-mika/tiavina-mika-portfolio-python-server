@@ -6,9 +6,8 @@ from datetime import datetime
 import json
 from slugify import slugify
 from werkzeug.utils import secure_filename
-from utils.constants import UPLOAD_FOLDER, UPLOAD_PATHNAME, ALLOWED_IMAGE_EXTENSIONS
-from utils.utils import save_upload_path
-import shutil
+from utils.constants import UPLOAD_FOLDER, UPLOAD_PATHNAME, ALLOWED_IMAGE_EXTENSIONS, BASE_DIR
+from utils.utils import save_upload_path, remove_contents, remove_uploaded_file
 
 def allowed_image_file(filename):
     return '.' in filename and \
@@ -32,7 +31,6 @@ def get_projects():
             order_by = args.get("order_by")
         else:
             order_by = "createdAt"
-            
         
         projects = Project.objects.order_by(f"{order_by}")
         paginated_projects = projects.paginate(page=page, per_page=per_page)
@@ -68,7 +66,6 @@ def add_project():
             project =  Project(name=name)
             project.slug = slugify(project.name)
             project.image = UPLOAD_PATHNAME+filename
-            project._image_file.put(file, content_type=file.content_type)
             project.save()
         return jsonify(project), 200
         
@@ -83,9 +80,24 @@ def add_project():
 @app.route('/projects/<id>', methods=['PUT'])
 def update_project(id):
     try:
-        body = request.get_json()
+        # body = request.get_json()
+        file = request.files['image']
+        name = request.form['name']
+        
         project = Project.objects.get(id=id)
-        project.update(**body, updatedAt = datetime.now(), slug = slugify(body['name']))
+        if file and allowed_image_file(file.filename):
+            filename = secure_filename(file.filename)
+            currentImage = project.image
+            if (project.image != file):
+                remove_uploaded_file(currentImage)
+                file.save(save_upload_path(UPLOAD_FOLDER, filename))
+                currentImage =  UPLOAD_PATHNAME+filename
+            
+            project.update(name = name, updatedAt = datetime.now(), slug = slugify(name), image=currentImage)
+            project.reload()
+        return jsonify(project), 200
+        
+        project.update(name = name, updatedAt = datetime.now(), slug = slugify(name))        
         project.reload()
         return jsonify(project), 200
     except Exception as e:
@@ -94,7 +106,11 @@ def update_project(id):
 @app.route('/projects/<id>', methods=['DELETE'])
 def delete_project(id):
     try:
-        project = Project.objects.get_or_404(id=id).delete()
+        project = Project.objects.get_or_404(id=id)
+        
+        remove_uploaded_file(project.image)
+        
+        project.delete()
 
         return { "id": id }, 200
     except Exception as e:
@@ -122,8 +138,8 @@ def get_project_by_slug(slug):
 def delete_projects():
     try:
         project = Project.objects.delete()
-        if os.path.isDir(UPLOAD_FOLDER):
-            shutil.rmtree(UPLOAD_FOLDER)
+        remove_contents(UPLOAD_FOLDER)
+
         return { "status": "success"}, 200
     except Exception as e:
         print(e)

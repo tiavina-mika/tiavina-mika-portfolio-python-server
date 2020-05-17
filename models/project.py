@@ -8,5 +8,4 @@ class Project(db.Document):
     createdAt = db.DateTimeField(default=datetime.now())
     updatedAt = db.DateTimeField()
     image = db.StringField()
-    _image_file = db.FileField()
 
