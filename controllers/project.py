@@ -1,10 +1,19 @@
+import os
 from flask import request, Response, jsonify
 from models.project import Project
 from config.app import app
 from datetime import datetime
 import json
 from slugify import slugify
+from werkzeug.utils import secure_filename
+from utils.constants import UPLOAD_FOLDER, UPLOAD_PATHNAME, ALLOWED_IMAGE_EXTENSIONS
+from utils.utils import save_upload_path
+import shutil
 
+def allowed_image_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_IMAGE_EXTENSIONS
+           
 @app.route('/projects')
 def get_projects():
     try:
@@ -41,6 +50,28 @@ def get_projects():
 def add_project():
     try:
         body = request.get_json()
+        file = request.files['image']
+        name = request.form['name']
+
+        if file and allowed_image_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(save_upload_path(UPLOAD_FOLDER, filename))
+            
+            # files = []
+            # for filename in os.listdir(UPLOAD_FOLDER):
+            #     path = os.path.join(UPLOAD_FOLDER, filename)
+            #     if os.path.isfile(path):
+            #         files.append(filename)
+            # return jsonify(files)
+            
+            
+            project =  Project(name=name)
+            project.slug = slugify(project.name)
+            project.image = UPLOAD_PATHNAME+filename
+            project._image_file.put(file, content_type=file.content_type)
+            project.save()
+        return jsonify(project), 200
+        
         project =  Project(**body)
         project.slug = slugify(project.name)
         project.save()
@@ -91,6 +122,8 @@ def get_project_by_slug(slug):
 def delete_projects():
     try:
         project = Project.objects.delete()
+        if os.path.isDir(UPLOAD_FOLDER):
+            shutil.rmtree(UPLOAD_FOLDER)
         return { "status": "success"}, 200
     except Exception as e:
         print(e)

@@ -7,4 +7,6 @@ class Project(db.Document):
     tags = db.ListField(db.StringField())
     createdAt = db.DateTimeField(default=datetime.now())
     updatedAt = db.DateTimeField()
+    image = db.StringField()
+    _image_file = db.FileField()
 

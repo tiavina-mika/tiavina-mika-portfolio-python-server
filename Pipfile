@@ -14,6 +14,7 @@ pymongo = {extras = ["srv", "tls"],version = "*"}
 dnspython = "*"
 flask-cors = "*"
 python-slugify = "*"
+pillow = "*"
 
 [requires]
 python_version = "3.7"
