@@ -1,5 +1,6 @@
 import os
 from config.app import app
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 STATIC_FOLDER = os.path.join(os.path.join(BASE_DIR, 'static'))
