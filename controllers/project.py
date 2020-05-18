@@ -50,32 +50,32 @@ def add_project():
         body = request.get_json()
         file = request.files['image']
         name = request.form['name']
+        images = request.files.to_dict(flat=False)['images']
 
-        if file and allowed_image_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(save_upload_path(UPLOAD_FOLDER, filename))
+        print('file', file)
+        if not file or not allowed_image_file(file.filename):
+            return { "error": "only image can be uploaded"}, 200
+
+        filename = secure_filename(file.filename)
+        file.save(save_upload_path(UPLOAD_FOLDER, filename))
+        
+        files = []
+        for image in images:
+            image_filename = secure_filename(image.filename)
+            image.save(save_upload_path(UPLOAD_FOLDER, image_filename))
+
+            files.append(UPLOAD_PATHNAME+image_filename)
+       
+        project =  Project(name=name)
+        project.slug = slugify(project.name)
+        project.image = UPLOAD_PATHNAME+filename
+        project.images = files
+        project.save()
             
-            # files = []
-            # for filename in os.listdir(UPLOAD_FOLDER):
-            #     path = os.path.join(UPLOAD_FOLDER, filename)
-            #     if os.path.isfile(path):
-            #         files.append(filename)
-            # return jsonify(files)
-            
-            
-            project =  Project(name=name)
-            project.slug = slugify(project.name)
-            project.image = UPLOAD_PATHNAME+filename
-            project.save()
         return jsonify(project), 200
         
-        project =  Project(**body)
-        project.slug = slugify(project.name)
-        project.save()
-
-        return jsonify(project), 200
     except Exception as e:
-            print(e)
+        print(e)
 
 @app.route('/projects/<id>', methods=['PUT'])
 def update_project(id):
