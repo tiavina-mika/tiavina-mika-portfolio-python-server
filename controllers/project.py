@@ -7,7 +7,7 @@ import json
 from slugify import slugify
 from werkzeug.utils import secure_filename
 from utils.constants import UPLOAD_FOLDER, UPLOAD_PATHNAME, ALLOWED_IMAGE_EXTENSIONS, BASE_DIR
-from utils.utils import save_upload_path, remove_contents, remove_uploaded_file
+from utils.utils import save_upload_path, remove_contents, remove_uploaded_file, rename_filename
 
 def allowed_image_file(filename):
     return '.' in filename and \
@@ -52,19 +52,19 @@ def add_project():
         name = request.form['name']
         images = request.files.to_dict(flat=False)['images']
 
-        print('file', file)
         if not file or not allowed_image_file(file.filename):
             return { "error": "only image can be uploaded"}, 200
 
-        filename = secure_filename(file.filename)
+        filename = rename_filename('pimg-'+name, file.filename)
         file.save(save_upload_path(UPLOAD_FOLDER, filename))
         
         files = []
-        for image in images:
-            image_filename = secure_filename(image.filename)
-            image.save(save_upload_path(UPLOAD_FOLDER, image_filename))
+        if images:
+            for image in images:
+                image_filename = rename_filename('pimgs-'+name, image.filename)
+                image.save(save_upload_path(UPLOAD_FOLDER, image_filename))
 
-            files.append(UPLOAD_PATHNAME+image_filename)
+                files.append(UPLOAD_PATHNAME+image_filename)
        
         project =  Project(name=name)
         project.slug = slugify(project.name)
@@ -78,28 +78,61 @@ def add_project():
         print(e)
 
 @app.route('/projects/<id>', methods=['PUT'])
-def update_project(id):
+def update_project(id):    
     try:
-        # body = request.get_json()
-        file = request.files['image']
         name = request.form['name']
-        
         project = Project.objects.get(id=id)
-        if file and allowed_image_file(file.filename):
-            filename = secure_filename(file.filename)
-            currentImage = project.image
-            if (project.image != file):
-                remove_uploaded_file(currentImage)
-                file.save(save_upload_path(UPLOAD_FOLDER, filename))
-                currentImage =  UPLOAD_PATHNAME+filename
-            
-            project.update(name = name, updatedAt = datetime.now(), slug = slugify(name), image=currentImage)
-            project.reload()
-        return jsonify(project), 200
         
-        project.update(name = name, updatedAt = datetime.now(), slug = slugify(name))        
+        if request.files:
+            file = request.files['image']
+            
+            currentImage = project.image
+            filename = rename_filename('edited-pimg-'+name, file.filename)
+            path_filename = UPLOAD_PATHNAME+filename
+            if file and allowed_image_file(file.filename):
+                formatted_img = currentImage.split('_')[-1]
+                if not formatted_img in file.filename:
+                    remove_uploaded_file(currentImage)
+                
+                file.save(save_upload_path(UPLOAD_FOLDER, filename))
+                
+        
+            project.update(name = name, updatedAt = datetime.now(), slug = slugify(name), image=path_filename)
+            project.reload()
+            return jsonify(project), 200
+        
+        project.update(name = name, updatedAt = datetime.now(), slug = slugify(name))
         project.reload()
         return jsonify(project), 200
+        
+    except Exception as e:
+        print(e)
+
+@app.route('/projects/images/<id>', methods=['PUT'])
+def update_images_project(id):    
+    try:
+        project = Project.objects.get(id=id)
+        
+        images = request.files.to_dict(flat=False)['images']
+        # requim = request.files['images']
+        
+        files = []
+        currentImages = project.images
+        
+        for project_image in currentImages:
+            remove_uploaded_file(project_image)
+            
+        for image in images:
+            image_filename = secure_filename(image.filename)
+            saved_pathname = rename_filename('edited-pimgs-'+project.slug, image_filename)
+            files.append(saved_pathname)
+            
+            image.save(save_upload_path(UPLOAD_FOLDER, saved_pathname))
+    
+        project.update(updatedAt = datetime.now(), images=files)
+        project.reload()
+        return jsonify(project), 200   
+        
     except Exception as e:
         print(e)
 
@@ -107,9 +140,11 @@ def update_project(id):
 def delete_project(id):
     try:
         project = Project.objects.get_or_404(id=id)
-        
         remove_uploaded_file(project.image)
         
+        for image in project.images:
+            remove_uploaded_file(image)
+                   
         project.delete()
 
         return { "id": id }, 200

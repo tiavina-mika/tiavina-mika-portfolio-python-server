@@ -1,6 +1,9 @@
 import os
 import shutil
 from utils.constants import UPLOAD_FOLDER
+from werkzeug.utils import secure_filename
+from datetime import datetime
+from slugify import slugify
 
 def save_upload_path(target, filename):
     return '/'.join([target, filename])
@@ -21,3 +24,9 @@ def remove_uploaded_file(uploaded_file):
     
     if os.path.isfile(full_path):
         os.remove(full_path)
+
+# renaming the filename to save
+# format: name_data_originalname
+def rename_filename(name, filename):
+        return slugify(name)+'-'+slugify(str(datetime.now()))+'_'+secure_filename(filename)
+    
