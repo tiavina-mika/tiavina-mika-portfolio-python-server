@@ -1,6 +1,6 @@
 import os
 import shutil
-from utils.constants import UPLOAD_FOLDER
+from utils.constants import UPLOAD_FOLDER, UPLOAD_PATHNAME
 from werkzeug.utils import secure_filename
 from datetime import datetime
 from slugify import slugify

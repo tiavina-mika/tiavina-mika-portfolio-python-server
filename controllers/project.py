@@ -50,26 +50,16 @@ def add_project():
         body = request.get_json()
         file = request.files['image']
         name = request.form['name']
-        images = request.files.to_dict(flat=False)['images']
 
         if not file or not allowed_image_file(file.filename):
             return { "error": "only image can be uploaded"}, 200
 
         filename = rename_filename('pimg-'+name, file.filename)
         file.save(save_upload_path(UPLOAD_FOLDER, filename))
-        
-        files = []
-        if images:
-            for image in images:
-                image_filename = rename_filename('pimgs-'+name, image.filename)
-                image.save(save_upload_path(UPLOAD_FOLDER, image_filename))
-
-                files.append(UPLOAD_PATHNAME+image_filename)
        
         project =  Project(name=name)
         project.slug = slugify(project.name)
         project.image = UPLOAD_PATHNAME+filename
-        project.images = files
         project.save()
             
         return jsonify(project), 200
@@ -124,8 +114,8 @@ def update_images_project(id):
             
         for image in images:
             image_filename = secure_filename(image.filename)
-            saved_pathname = rename_filename('edited-pimgs-'+project.slug, image_filename)
-            files.append(saved_pathname)
+            saved_pathname = rename_filename('pimgs-'+project.slug, image_filename)
+            files.append(UPLOAD_PATHNAME+saved_pathname)
             
             image.save(save_upload_path(UPLOAD_FOLDER, saved_pathname))
     
