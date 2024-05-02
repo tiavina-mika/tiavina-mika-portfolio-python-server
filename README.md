@@ -1,3 +1,3 @@
 # tiavina-mika-app-server
 
-CRUD api using Python, Flask
+CRUD API using  `Python`, `Flask`, and `MongoDB`
